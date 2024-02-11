@@ -24,7 +24,7 @@ resource "google_compute_instance" "pal-server" {
   tags         = ["pal-server"]
   boot_disk {
     initialize_params {
-      size  = 10
+      size  = 20
       image = "ubuntu-os-cloud/ubuntu-2204-lts"
     }
   }
@@ -40,6 +40,8 @@ resource "google_compute_instance" "pal-server" {
     email  = google_service_account.pal-server-sac.email
     scopes = ["cloud-platform"]
   }
+
+  metadata_startup_script = file("${path.module}/creation_script.sh")
 
 }
 
