@@ -28,7 +28,7 @@ resource "google_compute_instance" "pal-server" {
   }
   boot_disk {
     initialize_params {
-      size  = 20
+      size  = 20 # 20 GiB
       image = "ubuntu-os-cloud/ubuntu-2204-lts"
     }
   }

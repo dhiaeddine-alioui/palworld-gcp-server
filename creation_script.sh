@@ -37,11 +37,7 @@ fi
 
 # Configure sudo to allow passwordless execution for specific commands for the new user
 echo "Configure sudo for passwordless execution..."
-echo "$USERNAME ALL=(ALL) NOPASSWD: /usr/bin/apt-get, /usr/bin/add-apt-repository, /usr/bin/dpkg, /usr/bin/apt, /usr/bin/echo, /usr/bin/debconf-set-selections" | sudo tee /etc/sudoers.d/$USERNAME
-
-# Disable the requirement for a TTY
-# echo "Defaults:$USERNAME !requiretty" | sudo tee -a /etc/sudoers.d/$USERNAME
-
+echo "$USERNAME ALL=(ALL) NOPASSWD:ALL" | sudo tee /etc/sudoers.d/$USERNAME
 
 # Switch to the newly created user and execute commands
 echo "Switching to user $USERNAME and performing setup..."
@@ -62,6 +58,16 @@ export PATH=$PATH:/usr/games
 mkdir -p ~/.steam/sdk64/
 steamcmd +login anonymous +app_update 1007 +quit
 cp ~/Steam/steamapps/common/Steamworks\ SDK\ Redist/linux64/steamclient.so ~/.steam/sdk64/
+
+# Download server files from bucket
+export PALSERVERDIR=/home/serveruser/Steam/steamapps/common
+sudo gcloud storage cp gs://pal-server-storage/pal-server-files/palworld-server-ubuntu-v0.1.3.0.tar \$PALSERVERDIR
+sudo tar -xvf \$PALSERVERDIR/palworld-server-ubuntu-v0.1.3.0.tar -C \$PALSERVERDIR
+sudo rm \$PALSERVERDIR/palworld-server-ubuntu-v0.1.3.0.tar
+sudo chown -R $USERNAME:$USERNAME \$PALSERVERDIR/PalServer/
+sudo rm -r \$PALSERVERDIR/PalServer/Pal/Saved
+sudo gcloud storage cp -r gs://pal-server-storage/saved-linux-games/Saved \$PALSERVERDIR/PalServer/Pal
+
 EOF
 
 # Check if setup was successful
