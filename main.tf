@@ -22,6 +22,10 @@ resource "google_compute_instance" "pal-server" {
   machine_type = "e2-standard-2"
   zone         = local.zone
   tags         = ["pal-server"]
+
+  metadata =  {
+    ssh-keys = "${var.user}:${var.publickeypath}"
+  }
   boot_disk {
     initialize_params {
       size  = 20
@@ -41,7 +45,18 @@ resource "google_compute_instance" "pal-server" {
     scopes = ["cloud-platform"]
   }
 
-  metadata_startup_script = file("${path.module}/creation_script.sh")
+  # metadata_startup_script = file("${path.module}/creation_script.sh")
+
+  provisioner "remote-exec" {
+    connection {
+      type        = "ssh"
+      user        = var.user
+      host        = google_compute_instance.pal-server.network_interface[0].access_config[0].nat_ip
+      private_key = file(var.privatekeypath)
+    }
+    script = "${path.module}/creation_script.sh"
+
+  }
 
 }
 
