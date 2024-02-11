@@ -24,7 +24,7 @@ resource "google_compute_instance" "pal-server" {
   tags         = ["pal-server"]
 
   metadata =  {
-    ssh-keys = "${var.user}:${var.publickeypath}"
+    ssh-keys = "${var.user}:${file("${path.module}/PalServerSSHKey.pub")}"
   }
   boot_disk {
     initialize_params {
