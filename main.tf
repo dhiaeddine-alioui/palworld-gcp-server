@@ -23,8 +23,11 @@ resource "google_compute_instance" "pal-server" {
   zone         = local.zone
   tags         = ["pal-server"]
 
+
   metadata =  {
     ssh-keys = "${var.user}:${file("${path.module}/PalServerSSHKey.pub")}"
+
+    shutdown-script = file("${path.module}/shutdown-script.sh")
   }
   boot_disk {
     initialize_params {
@@ -44,8 +47,6 @@ resource "google_compute_instance" "pal-server" {
     email  = google_service_account.pal-server-sac.email
     scopes = ["cloud-platform"]
   }
-
-  # metadata_startup_script = file("${path.module}/creation_script.sh")
 
   provisioner "remote-exec" {
     connection {

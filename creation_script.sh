@@ -9,31 +9,13 @@ echo "Creating New user : $USERNAME ..."
 sudo deluser --remove-home $USERNAME
 sudo useradd -m -s /bin/bash $USERNAME
 
-# Check if user creation was successful
-if [ $? -ne 0 ]; then
-    echo "Failed to create user."
-    exit 1
-fi
-
 # Set the password for the user
 echo "Setting password ..."
 echo -e "$PASSWORD\n$PASSWORD" | sudo passwd $USERNAME
 
-# Check if password setup was successful
-if [ $? -ne 0 ]; then
-    echo "Failed to set password."
-    exit 1
-fi
-
 # Add the new user to the sudo group
 echo "Add $USERNAME to 'sudo' group ..."
 sudo usermod -aG sudo $USERNAME
-
-# Check if adding to sudo group was successful
-if [ $? -ne 0 ]; then
-    echo "Failed to add user to 'sudo' group."
-    exit 1
-fi
 
 # Configure sudo to allow passwordless execution for specific commands for the new user
 echo "Configure sudo for passwordless execution..."
@@ -60,13 +42,32 @@ steamcmd +login anonymous +app_update 1007 +quit
 cp ~/Steam/steamapps/common/Steamworks\ SDK\ Redist/linux64/steamclient.so ~/.steam/sdk64/
 
 # Download server files from bucket
-export PALSERVERDIR=/home/serveruser/Steam/steamapps/common
-sudo gcloud storage cp gs://pal-server-storage/pal-server-files/palworld-server-ubuntu-v0.1.3.0.tar \$PALSERVERDIR
-sudo tar -xvf \$PALSERVERDIR/palworld-server-ubuntu-v0.1.3.0.tar -C \$PALSERVERDIR
-sudo rm \$PALSERVERDIR/palworld-server-ubuntu-v0.1.3.0.tar
-sudo chown -R $USERNAME:$USERNAME \$PALSERVERDIR/PalServer/
-sudo rm -r \$PALSERVERDIR/PalServer/Pal/Saved
-sudo gcloud storage cp -r gs://pal-server-storage/saved-linux-games/Saved \$PALSERVERDIR/PalServer/Pal
+export PALSERVERDIR=/home/$USERNAME/Steam/steamapps/common
+gcloud storage cp gs://pal-server-storage/pal-server-files/palworld-server-ubuntu-v0.1.3.0.tar \$PALSERVERDIR
+tar -xvf \$PALSERVERDIR/palworld-server-ubuntu-v0.1.3.0.tar -C \$PALSERVERDIR
+rm \$PALSERVERDIR/palworld-server-ubuntu-v0.1.3.0.tar
+rm -r \$PALSERVERDIR/PalServer/Pal/Saved
+gcloud storage cp -r gs://pal-server-storage/saved-linux-games/Saved \$PALSERVERDIR/PalServer/Pal
+
+cat <<EOS | sudo tee /etc/systemd/system/palserver.service >/dev/null
+[Unit]
+Description=Palworld Server
+After=network.target
+
+[Service]
+Type=simple
+User=$USERNAME
+Restart=no|always|on-success|on-failure|on-abnormal|on-abort|on-watchdog
+RestartSec=30s
+ExecStart=/home/$USERNAME/Steam/steamapps/common/PalServer/PalServer.sh
+
+[Install]
+WantedBy=multi-user.target
+EOS
+
+sudo systemctl daemon-reload
+sudo systemctl enable palserver.service
+sudo systemctl start palserver.service
 
 EOF
 
